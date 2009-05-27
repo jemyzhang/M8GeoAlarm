@@ -334,6 +334,7 @@ bool GeoReminder::getATLocalInfo(int &lac, int &cid){
 			}
 		}while(isRunning);
 	}
+	m_atCmd.close();
 	m_atCmdLock = false;
 	return ret;
 }
