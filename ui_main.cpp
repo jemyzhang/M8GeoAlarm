@@ -481,6 +481,7 @@ void Ui_MainWnd::OnMzCommand(WPARAM wParam, LPARAM lParam) {
 				georeminder.addReminder(&r);
 				refreshReminderList(true);
 			}
+			m_EdtLocName.SetStatus(false);
 		}
         case MZ_IDC_TOOLBAR_MAIN:
         {

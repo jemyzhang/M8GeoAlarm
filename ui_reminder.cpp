@@ -495,7 +495,6 @@ void Ui_GeoReminderWnd::OnMzCommand(WPARAM wParam, LPARAM lParam) {
 			if(nIndex == 1){
 				if(MzMessageBoxEx(m_hWnd,L"确实要删除此记录？",L"确认",MZ_YESNO,false) == 1){
 					georeminder.deleteReminder(r);
-					georeminder.saveReminderList();
 				}
 				EndModal(ID_OK);
 				return;
