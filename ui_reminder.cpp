@@ -22,6 +22,124 @@ MZ_IMPLEMENT_DYNAMIC(Ui_GeoReminderWnd)
 #define DEFAULT_REMINDER_INI		L"\\Disk\\Programs\\M8Cash\\reminder.ini"
 #endif
 
+bool GeoInfo::sendSingleCommand(){
+	bool ret = false;
+	bool isOpen = true;
+	if(m_atCmd.getComHandle() == INVALID_HANDLE_VALUE){
+		isOpen = m_atCmd.open();
+	}
+	if(isOpen){
+		if(m_atCmd.send("AT+CREG=2;+CREG?")){
+			ret = true;
+		}
+	}
+	return ret;
+}
+
+bool GeoInfo::sendBatchStartCommand(){
+	bool ret = false;
+	bool isOpen = true;
+	if(m_atCmd.getComHandle() == INVALID_HANDLE_VALUE){
+		isOpen = m_atCmd.open();
+	}
+	if(isOpen){
+		if(m_atCmd.send("AT+XCELLINFO=1")){
+			_batchCmdSent = true;
+			ret = true;
+		}
+	}
+	return ret;
+}
+
+bool GeoInfo::sendBatchEndCommand(){
+	bool ret = false;
+	bool isOpen = true;
+	if(m_atCmd.getComHandle() == INVALID_HANDLE_VALUE){
+		isOpen = m_atCmd.open();
+	}
+	if(isOpen){
+		if(m_atCmd.send("AT+XCELLINFO=0")){
+			_batchCmdSent = false;
+			ret = true;
+			m_atCmd.close();
+		}
+	}
+	return ret;
+}
+
+bool GeoInfo::getLocalInfo(int &lac, int &cid){
+	if(m_atCmdLock) return false;
+	m_atCmdLock = true;
+
+	lac = 0; cid = 0;
+
+	bool ret = false;
+	bool isOpen = true;
+	if(_useSingleCmd){
+		if(sendSingleCommand()){
+			DateTime::waitms(200);
+			char buf[512];
+			int len = m_atCmd.receive(buf,512);
+			if(len > 6){
+				/*
+				AT+CREG=2;+CREG?<cr><lf>
+				+CREG: 2,n,"ABCD","ABCD"<cr><lf>
+				OK<cr><lf>
+				*/
+				for(int i = 0; i < len; i++){
+					if(buf[i] == '+' &&
+						buf[i+1] == 'C' &&
+						buf[i+2] == 'R' &&
+						buf[i+3] == 'E' &&
+						buf[i+4] == 'G' &&
+						buf[i+5] == ':'){
+							char* puseStr = buf + i + 6;
+							int unknown;
+							sscanf(puseStr," 2,%01d,\"%04x\",\"%04x\"",&unknown,&lac,&cid);
+							break;
+					}
+				}
+				ret = true;
+			}
+		}
+		m_atCmd.close();
+	}else{
+		bool bsent = true;
+		if(!_batchCmdSent){	//send start command first
+			bsent = sendBatchStartCommand();
+			DateTime::waitms(100);
+		}
+		if(bsent){
+			char buf[512];
+			int len = m_atCmd.receive(buf,512);
+			if(len > 11){
+				for(int i = 0; i < len; i++){
+					//+XCELLINFO: a,b,c,LAC,CI,d
+					if(buf[i] == '+' &&
+						buf[i+1] == 'X' &&
+						buf[i+2] == 'C' &&
+						buf[i+3] == 'E' &&
+						buf[i+4] == 'L' &&
+						buf[i+5] == 'L' &&
+						buf[i+6] == 'I' &&
+						buf[i+7] == 'N' &&
+						buf[i+8] == 'F' &&
+						buf[i+9] == 'O' &&
+						buf[i+10] == ':'){
+							char* puseStr = buf + i + 11;
+							UINT a,b,c,d;
+							sscanf(puseStr," %x,%x,%x,%x,%x,%x",&a,&b,&c,&lac,&cid,&d);
+							break;
+					}
+				}
+				ret = true;
+			}
+		}
+	}
+	m_atCmdLock = false;
+	return ret;
+}
+
 GeoReminder::GeoReminder()
 {
 	bool ret;
@@ -36,7 +154,6 @@ GeoReminder::GeoReminder()
 	if(!File::FileExists(ini_reminder)){
 		ret = IniCreateFile(ini_reminder);
 	}
-	m_atCmdLock = false;
 }
 
 GeoReminder::~GeoReminder(){
@@ -285,59 +402,6 @@ ReminderInfo_ptr GeoReminder::checkReminder(int lac, int cid){
 	return preminder;
 }
 
-bool GeoReminder::getATLocalInfo(int &lac, int &cid){
-	lac = 0; cid = 0;
-	if(m_atCmdLock) return false;
-	m_atCmdLock = true;
-
-	bool ret = false;
-	bool isOpen = true;
-	if(m_atCmd.getComHandle() == INVALID_HANDLE_VALUE){
-		isOpen = m_atCmd.open();
-	}
-	if(isOpen){
-		int retry_cnt = 0;
-		bool isRunning = true;
-		do{
-			if(m_atCmd.send("AT+CREG=2;+CREG?")){
-				DateTime::waitms(200);
-				char buf[512];
-				int len = m_atCmd.receive(buf,512);
-				if(len > 0){
-					/*
-					AT+CREG=2;+CREG?<cr><lf>
-					+CREG: 2,n,"ABCD","ABCD"<cr><lf>
-					OK<cr><lf>
-					*/
-					for(int i = 0; i < len; i++){
-						if(buf[i] == '+' &&
-							buf[i+1] == 'C' &&
-							buf[i+2] == 'R' &&
-							buf[i+3] == 'E' &&
-							buf[i+4] == 'G' &&
-							buf[i+5] == ':'){
-								char* puseStr = buf + i + 6;
-								int replyLen = 17;
-								int unknown;
-								sscanf(puseStr," 2,%01d,\"%04x\",\"%04x\"",&unknown,&lac,&cid);
-								break;
-						}
-					}
-					ret = true;
-				}
-			}
-			retry_cnt--;
-			isRunning = false;	//end
-			if(lac == 0 && cid == 0 && retry_cnt >= 0){
-				DateTime::waitms(200);
-				isRunning = true;	//retry
-			}
-		}while(isRunning);
-	}
-	m_atCmd.close();
-	m_atCmdLock = false;
-	return ret;
-}
 //////
 
 Ui_GeoReminderWnd::Ui_GeoReminderWnd(void)

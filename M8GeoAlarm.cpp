@@ -39,7 +39,8 @@ BOOL M8GeoAlarmApp::Init() {
 	if(lstrlen(str)){
 		//处理小区
 		int lac,cid;
-		georeminder.getATLocalInfo(lac,cid);
+		georeminder.setMethod(true);
+		georeminder.getLocalInfo(lac,cid);
 		ReminderInfo_ptr p = georeminder.checkReminder(lac,cid);
 
 		wchar_t tmp[1024];

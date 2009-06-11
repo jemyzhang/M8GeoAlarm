@@ -233,14 +233,15 @@ BOOL Ui_MainWnd::OnInitDialog() {
 	refreshSignalImage();
 	refreshReminderList(true);
 	SetTimer(m_hWnd,0x1001,500,NULL);
-	SetTimer(m_hWnd,0x1002,2100,NULL);
+	SetTimer(m_hWnd,0x1002,1100,NULL);
 
     return TRUE;
 }
 
 void Ui_MainWnd::setupDUi(bool update){
 	int lac, cid;
-	if(!bprohibit && georeminder.getATLocalInfo(lac,cid)){
+	georeminder.setMethod(false);
+	if(!bprohibit && georeminder.getLocalInfo(lac,cid)){
 		if(lac == 0 || cid == 0) return;
 		ReminderInfo_ptr preminder = georeminder.getReminder(lac,cid);
 		if(preminder){
@@ -448,6 +449,9 @@ void Ui_MainWnd::OnMzCommand(WPARAM wParam, LPARAM lParam) {
 				m_BtnAddModifyLocName.Invalidate();
 				m_BtnAddModifyLocName.Update();
 				refreshSignalImage();
+				if(!georeminder.getMethod()){
+					georeminder.sendBatchEndCommand();
+				}
 			}else{
 				if(bprohibit) m_EdtLocName.SetStatus(false);
 				m_BtnEnaReminder.SetText2(L"∆Ù”√");

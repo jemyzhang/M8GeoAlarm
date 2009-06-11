@@ -94,14 +94,44 @@ public:
 private:
 	HANDLE hCOM;
 };
-class GeoReminder
+
+class GeoInfo {
+public:
+	GeoInfo(){
+		m_atCmdLock = false;
+		_useSingleCmd = true;
+		_batchCmdSent = false;
+	}
+	~GeoInfo(){
+		if(!_useSingleCmd && _batchCmdSent){
+			sendBatchEndCommand();
+		}
+	}
+public:
+	void setMethod(bool singlecmd){
+		_useSingleCmd = singlecmd;
+	}
+	bool getMethod(){
+		return _useSingleCmd;
+	}
+	bool getLocalInfo(int &lac, int &cid);
+	bool sendSingleCommand();
+	bool sendBatchStartCommand();
+	bool sendBatchEndCommand();
+private:
+	bool _useSingleCmd;
+	bool _batchCmdSent;
+	AtCommander m_atCmd;
+	bool m_atCmdLock;
+};
+
+class GeoReminder : public GeoInfo
 {
 public:
 	GeoReminder(void);
 	~GeoReminder(void);
 public:
 	HANDLE Notify(SYSTEMTIME st, HANDLE hNotification = (HANDLE)0);
-	bool getATLocalInfo(int &LAC, int &cid);
 public:
 	//返回reminder数量
 	void setReminderIniPath(wchar_t* p){
@@ -130,9 +160,6 @@ public:
 public:
 	wchar_t* rinipath;
 	list<ReminderInfo_ptr> list_reminder;
-private:
-	AtCommander m_atCmd;
-	bool m_atCmdLock;
 };
 
 //提醒设置界面
