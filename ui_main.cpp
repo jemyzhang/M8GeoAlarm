@@ -5,11 +5,13 @@
 
 #include "resource.h"
 
-#include "mz_commonfunc.h"
+#include "cMzCommon.h"
 
 #include "ui_about.h"
-using namespace MZ_CommonFunc;
+using namespace cMzCommon;
 #include <notify.h>
+
+#include "cellid_info.h"
 
 #define MZ_IDC_TOOLBAR_MAIN 101
 #define MZ_IDC_SCROLLWIN 102
@@ -80,7 +82,7 @@ void ReminderList::DrawItem(HDC hdcDst, int nIndex, RECT* prcItem, RECT *prcWin,
 		rectLine11.right,	prcItem->bottom
 	};
 	wchar_t wbuf[32];
-	ReminderInfo_ptr preminder = georeminder.getReminderByIndex(nIndex);
+	LPReminderInfo preminder = georeminder.getReminderByIndex(nIndex);
 	wsprintf(wbuf,L"(%d,%d)",preminder->LAC,preminder->CID);
 
 	::SetTextColor( hdcDst , RGB(41,136,226) );
@@ -92,13 +94,13 @@ void ReminderList::DrawItem(HDC hdcDst, int nIndex, RECT* prcItem, RECT *prcWin,
 	::SetTextColor( hdcDst , RGB(0,0,0) );
 	hf = FontHelper::GetFont( 25 );
     SelectObject( hdcDst , hf );
-	MzDrawText( hdcDst , preminder->name.C_Str(), &rectLine11 , DT_LEFT|DT_SINGLELINE|DT_VCENTER|DT_END_ELLIPSIS );
+	MzDrawText( hdcDst , preminder->name, &rectLine11 , DT_LEFT|DT_SINGLELINE|DT_VCENTER|DT_END_ELLIPSIS );
 	DeleteObject(hf);
 
 	::SetTextColor( hdcDst , RGB(57,168,255) );
 	hf = FontHelper::GetFont( 20 );
     SelectObject( hdcDst , hf );
-	MzDrawText( hdcDst , preminder->text.C_Str(), &rectLine2 , DT_LEFT|DT_SINGLELINE|DT_VCENTER|DT_END_ELLIPSIS );
+	MzDrawText( hdcDst , preminder->text, &rectLine2 , DT_LEFT|DT_SINGLELINE|DT_VCENTER|DT_END_ELLIPSIS );
 	DeleteObject(hf);
 	RECT rectImage1 = {
 		rectLine2.right,		prcItem->top + (prcItem->bottom - prcItem->top - 48)/2,
@@ -239,11 +241,10 @@ BOOL Ui_MainWnd::OnInitDialog() {
 }
 
 void Ui_MainWnd::setupDUi(bool update){
-	int lac, cid;
-	georeminder.setMethod(false);
-	if(!bprohibit && georeminder.getLocalInfo(lac,cid)){
+	DWORD lac, cid;
+	if(!bprohibit && GetCurrentCellInfo(0,0,&lac,&cid)){
 		if(lac == 0 || cid == 0) return;
-		ReminderInfo_ptr preminder = georeminder.getReminder(lac,cid);
+		LPReminderInfo preminder = georeminder.getReminder(lac,cid);
 		if(preminder){
 			m_EdtLocName.SetText(preminder->name);
 			m_BtnAddModifyLocName.SetText(L"ÐÞ¸Ä");
@@ -305,7 +306,7 @@ void Ui_MainWnd::setupDUi(bool update){
 
 void Ui_MainWnd::refreshReminderList(bool updatelist){
 	if(updatelist){
-		int size = georeminder.list_reminder.size();
+		int size = georeminder.reminders.size();
 		m_ReminderList.setItemCount(size);
 	}
 	m_ReminderList.Invalidate();
@@ -390,7 +391,7 @@ LRESULT Ui_MainWnd::MzDefWndProc(UINT message, WPARAM wParam, LPARAM lParam) {
 				if (!m_ReminderList.IsMouseDownAtScrolling() && !m_ReminderList.IsMouseMoved()) {
 					int nIndex = m_ReminderList.CalcIndexOfPos(x, y);
 					if(nIndex != -1){
-						ReminderInfo_ptr r = georeminder.getReminderByIndex(nIndex);
+						LPReminderInfo r = georeminder.getReminderByIndex(nIndex);
 						int pos = m_ReminderList.GetWidth() - imgArrow->GetImageWidth() - 5;
 						if(x > pos){
 							Ui_GeoReminderWnd dlg;
@@ -449,9 +450,6 @@ void Ui_MainWnd::OnMzCommand(WPARAM wParam, LPARAM lParam) {
 				m_BtnAddModifyLocName.Invalidate();
 				m_BtnAddModifyLocName.Update();
 				refreshSignalImage();
-				if(!georeminder.getMethod()){
-					georeminder.sendBatchEndCommand();
-				}
 			}else{
 				if(bprohibit) m_EdtLocName.SetStatus(false);
 				m_BtnEnaReminder.SetText2(L"ÆôÓÃ");
@@ -473,7 +471,7 @@ void Ui_MainWnd::OnMzCommand(WPARAM wParam, LPARAM lParam) {
 			r.LAC = _wtoi(m_lblLACI.GetText().C_Str());
 			r.CID = _wtoi(m_lblCI.GetText().C_Str());
 			r.name = m_EdtLocName.GetText();
-			ReminderInfo_ptr pr = georeminder.getReminder(r.LAC, r.CID);
+			LPReminderInfo pr = georeminder.getReminder(r.LAC, r.CID);
 			if(pr){
 				r.isEna = pr->isEna;
 				r.text = pr->text;

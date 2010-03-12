@@ -66,7 +66,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,6.00"
-				AdditionalDependencies="mzfc.lib PlatformApi.lib CallInterface.lib"
+				AdditionalDependencies="mzfc.lib PlatformApi.lib"
 				OutputFile="$(OutDir)/M8GeoAlarm.exe"
 				LinkIncremental="2"
 				DelayLoadDLLs="$(NOINHERIT)"
@@ -206,11 +206,15 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\M8GeoAlarm.cpp"
+				RelativePath=".\cellid_info.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\mz_commonfunc.cpp"
+				RelativePath=".\cMzCommon.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\M8GeoAlarm.cpp"
 				>
 			</File>
 			<File
@@ -232,11 +236,15 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\M8GeoAlarm.h"
+				RelativePath=".\cellid_info.h"
 				>
 			</File>
 			<File
-				RelativePath=".\mz_commonfunc.h"
+				RelativePath=".\cMzCommon.h"
+				>
+			</File>
+			<File
+				RelativePath=".\M8GeoAlarm.h"
 				>
 			</File>
 			<File

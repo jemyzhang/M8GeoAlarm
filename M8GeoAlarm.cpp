@@ -1,10 +1,10 @@
 #include "M8GeoAlarm.h"
-#include "mz_commonfunc.h"
+#include "cMzCommon.h"
 #include "ui_reminder.h"
 #include <MotorVibrate.h>
 
 #include "resource.h"
-using namespace MZ_CommonFunc;
+using namespace cMzCommon;
 // The global variable of the application.
 M8GeoAlarmApp theApp;
 wchar_t ini_path[256];
@@ -38,14 +38,14 @@ BOOL M8GeoAlarmApp::Init() {
 	wchar_t prestr[1024];
 	if(lstrlen(str)){
 		//处理小区
+        //TODO
 		int lac,cid;
-		georeminder.setMethod(true);
-		georeminder.getLocalInfo(lac,cid);
-		ReminderInfo_ptr p = georeminder.checkReminder(lac,cid);
+//		georeminder.getLocalInfo(lac,cid);
+		LPReminderInfo p = georeminder.checkReminder(lac,cid);
 
 		wchar_t tmp[1024];
 		if(p){
-			wsprintf(prestr,L"\n%s\n%s",p->name.C_Str(),C::restoreWrap(tmp,p->text.C_Str()));
+			wsprintf(prestr,L"\n%s\n%s",p->name,C::restoreWrap(tmp,p->text));
 			MzSetVibrateOn(MZ_VIBRATE_ON_TIME,MZ_VIBRATE_OFF_TIME);
 			while(MzMessageBoxEx(0, prestr, L"Exit", MB_OK) != 1);
 			MzSetVibrateOff();
