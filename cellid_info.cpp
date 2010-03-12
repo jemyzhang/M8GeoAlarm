@@ -85,7 +85,7 @@ HRESULT Deinitialize( void )
 {   
     HRESULT hr = S_FALSE;   
 
-    hr = DLL_RIL_Deinitialize( &g_RilHandle );   
+    hr = DLL_RIL_Deinitialize( g_RilHandle );   
     if ( FAILED( hr ) )   
     {   
         wprintf(L"RIL_Deinitialize failed, hr = %x\r\n", hr);   

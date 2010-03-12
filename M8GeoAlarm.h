@@ -1,11 +1,11 @@
 #include "ui_main.h"
 #include "ui_reminder.h"
 
-#define VER_STRING L"1.10"
+#define VER_STRING L"1.50"
 #ifdef MZFC_STATIC
-#define BUILD_STRING L"20090611(S)"
+#define BUILD_STRING L"20100312(S)"
 #else
-#define BUILD_STRING L"20090611(D)"
+#define BUILD_STRING L"20100312(D)"
 #endif
 #define APPNAME L"µÿ¿ÌÃ·–—"
 #ifdef _DEBUG

@@ -2,6 +2,7 @@
 #include <notify.h>
 #include "ReadWriteIni.h"
 #include "M8GeoAlarm.h"
+#include "cellid_info.h"
 
 MZ_IMPLEMENT_DYNAMIC(Ui_GeoReminderWnd)
 
@@ -33,9 +34,11 @@ GeoReminder::GeoReminder()
     if(!File::FileExists(ini_reminder)){
         ret = IniCreateFile(ini_reminder);
     }
+	CreateCellInfoInstance();
 }
 
 GeoReminder::~GeoReminder(){
+	FinalizeCellInfoInstance();
 }
 
 HANDLE GeoReminder::Notify(SYSTEMTIME st, HANDLE hNotification)

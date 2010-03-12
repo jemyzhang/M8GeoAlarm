@@ -235,7 +235,6 @@ BOOL Ui_MainWnd::OnInitDialog() {
 	refreshSignalImage();
 	refreshReminderList(true);
 	SetTimer(m_hWnd,0x1001,500,NULL);
-	SetTimer(m_hWnd,0x1002,1100,NULL);
 
     return TRUE;
 }
@@ -446,14 +445,16 @@ void Ui_MainWnd::OnMzCommand(WPARAM wParam, LPARAM lParam) {
 			if(m_BtnEnaReminderSW.GetState() == MZCS_BUTTON_NORMAL){
 				m_BtnEnaReminder.SetText2(L"πÿ±’");
 				CeClearUserNotification(hReminder);
+				KillTimer(m_hWnd,0x1002);
 				m_BtnAddModifyLocName.SetEnable(false);
 				m_BtnAddModifyLocName.Invalidate();
-				m_BtnAddModifyLocName.Update();
 				refreshSignalImage();
 			}else{
 				if(bprohibit) m_EdtLocName.SetStatus(false);
 				m_BtnEnaReminder.SetText2(L"∆Ù”√");
+				m_BtnEnaReminder.Invalidate();
 				hReminder = georeminder.setNextCheckInterval(1);
+				SetTimer(m_hWnd,0x1002,1100,NULL);
 			}
 			m_BtnEnaReminder.Invalidate();
 			m_BtnEnaReminder.Update();
