@@ -3,9 +3,9 @@
 
 #define VER_STRING L"1.50"
 #ifdef MZFC_STATIC
-#define BUILD_STRING L"20100312(S)"
+#define BUILD_STRING L"20100316(S)"
 #else
-#define BUILD_STRING L"20100312(D)"
+#define BUILD_STRING L"20100316(D)"
 #endif
 #define APPNAME L"µÿ¿ÌÃ·–—"
 #ifdef _DEBUG

@@ -214,6 +214,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\logout.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\M8GeoAlarm.cpp"
 				>
 			</File>
@@ -241,6 +245,10 @@
 			</File>
 			<File
 				RelativePath=".\cMzCommon.h"
+				>
+			</File>
+			<File
+				RelativePath=".\logout.h"
 				>
 			</File>
 			<File

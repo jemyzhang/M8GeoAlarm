@@ -337,7 +337,8 @@ void Ui_MainWnd::OnTimer(UINT nIDEvent){
 			break;
 		case 0x1002:
 			if(m_BtnEnaReminderSW.GetState() == MZCS_BUTTON_PRESSED){
-				PostMessage(MZ_WM_UI_REMINDER_UPDATE,NULL,NULL);
+				//PostMessage(MZ_WM_UI_REMINDER_UPDATE,NULL,NULL);
+                ReqCurrentCellInfo(m_hWnd);
 			}
 			break;
 	}

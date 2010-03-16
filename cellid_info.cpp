@@ -1,6 +1,7 @@
 #include "cellid_info.h"
 #include "ril.h"
-
+#include "logout.h"
+#define MZ_WM_UI_REMINDER_UPDATE					MZFC_WM_MESSAGE+0x0100
 typedef struct tagCellInfo {
     DWORD dwMobileCountryCode;          // @field TBD
     DWORD dwMobileNetworkCode;          // @field TBD
@@ -14,7 +15,8 @@ CELLINFO g_result = {0};
 HRESULT g_hCellTowerInfo;   
 HRIL    g_RilHandle = NULL;
 HINSTANCE g_RilInstance = NULL;
-bool g_InfoUpdated = false;
+bool g_ReqCellInfoUpdated = false;
+HWND g_ReqHwnd = 0;
 
 typedef HRESULT (*Dll_RIL_Initialize_T)(DWORD, RILRESULTCALLBACK, RILNOTIFYCALLBACK, DWORD, DWORD, HRIL*);
 typedef HRESULT (*Dll_RIL_DeInitialize_T)(HRIL);
@@ -44,7 +46,14 @@ void RILResultCallback(DWORD dwResultCode, HRESULT hrCommandID, const void* pDat
                 g_result.dwCellID = pCallInfo->dwCellID;
                 g_result.dwLocationAreaCode = pCallInfo->dwLocationAreaCode;
                 g_result.dwBaseStationID = pCallInfo->dwBaseStationID;
-                g_InfoUpdated = true;
+                logout("RILResultCallback,( 0x%x 0x%x 0x%x 0x%x 0x%x )\n", 
+                    g_result.dwMobileCountryCode, 
+                    g_result.dwMobileNetworkCode,
+                    g_result.dwCellID,
+                    g_result.dwLocationAreaCode,
+                    g_result.dwBaseStationID); 
+                g_ReqCellInfoUpdated = false;   //更新完毕
+                PostMessage(g_ReqHwnd,MZ_WM_UI_REMINDER_UPDATE,NULL,NULL);
             }   
             break;    
         }   
@@ -60,7 +69,7 @@ void RILNotifyCallback(
                        DWORD dwParam)   
 {   
     HRESULT hr = RIL_RESULT_OK;   
-    wprintf( L"RILNotifyCallback,( 0x%x )\n", dwCode );   
+    logout("RILNotifyCallback,( 0x%x )\n", dwCode );   
 }   
 
 //Initialize RIL   
@@ -68,12 +77,13 @@ HRESULT Initialize( void )
 {   
     HRESULT hr = S_FALSE;   
 
+    logout("RIL_Initialize\n");
     hr = DLL_RIL_Initialize( 1, RILResultCallback,    
         RILNotifyCallback, RIL_NCLASS_ALL, 0, &g_RilHandle );   
 
     if ( FAILED( hr ) )   
     {   
-        wprintf(L"RIL_Initialize failed, hr = %x\r\n", hr);   
+        logout("RIL_Initialize failed, hr = %x\n", hr);   
     }   
 
     g_hCellTowerInfo = S_FALSE;   
@@ -83,12 +93,14 @@ HRESULT Initialize( void )
 //deinitialize RIL   
 HRESULT Deinitialize( void )   
 {   
-    HRESULT hr = S_FALSE;   
+    HRESULT hr = S_FALSE; 
+
+    logout("RIL_Deinitialize\n");
 
     hr = DLL_RIL_Deinitialize( g_RilHandle );   
     if ( FAILED( hr ) )   
     {   
-        wprintf(L"RIL_Deinitialize failed, hr = %x\r\n", hr);   
+        logout("RIL_Deinitialize failed, hr = %x\n", hr);   
     }   
     g_RilHandle = NULL;   
 
@@ -125,15 +137,25 @@ bool FinalizeCellInfoInstance(){
     return retval;
 }
 
+bool ReqCurrentCellInfo(HWND m_hwnd){
+    g_ReqHwnd = m_hwnd;
+    logout("RIL_ReqCurrentCellInfo\n");
+    if(g_ReqCellInfoUpdated){   //requesting
+        return false;
+    }else{
+        g_ReqCellInfoUpdated = true;
+        g_hCellTowerInfo = DLL_RIL_GetCellTowerInfo(g_RilHandle);
+        return true;
+    }
+}
+
 bool GetCurrentCellInfo(DWORD *mcc, DWORD *mnc, DWORD *lac, DWORD *cid){
+    logout("RIL_GetCurrentCellInfo\n");
     bool retval = true;
     if(g_RilInstance == NULL) return false;
 
-    if(!g_InfoUpdated){ //尚未更新
-        g_hCellTowerInfo = DLL_RIL_GetCellTowerInfo(g_RilHandle);
+    if(g_ReqCellInfoUpdated){ //请求中，尚未返回结果
         retval = false;
-    }else{
-        g_InfoUpdated = false;
     }
     if(mcc) *mcc = g_result.dwMobileCountryCode;
     if(mnc) *mnc = g_result.dwMobileNetworkCode;
